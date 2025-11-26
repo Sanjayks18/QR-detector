@@ -1,4 +1,9 @@
 function onScanSuccess(decodedText, decodedResult) {
+  const resultDiv = document.getElementById('scan-result');
+
+  // Clear previous message and styles immediately on new scan
+
+
   // Send scanned QR code to the backend for attendance marking
   fetch('/scan', {
     method: 'POST',
@@ -7,18 +12,27 @@ function onScanSuccess(decodedText, decodedResult) {
   })
     .then(response => response.json())
     .then(data => {
-      const resultDiv = document.getElementById('scan-result');
       if (data.success) {
+         // Clear "Scanning..." message before showing the response
+        resultDiv.innerText = "";
         resultDiv.innerText = data.message;
         resultDiv.style.color = "green";
         resultDiv.style.border = "2px solid #22aa22";
         resultDiv.style.background = "#e8ffe8";
       } else {
         if (data.message.toLowerCase().includes("already")) {
-          resultDiv.innerText = "No need to rescan, your attendance successfully noted.";
+          // Show user name from returned message for 1 second then clear
+          resultDiv.innerText = data.message; // expected to include name
           resultDiv.style.color = "#138496";           // teal text
           resultDiv.style.border = "2px solid #17a2b8"; // bright teal border
           resultDiv.style.background = "#d1ecf1";      // light teal background
+          
+          setTimeout(() => {
+            resultDiv.innerText = "";
+            resultDiv.style.border = "none";
+            resultDiv.style.background = "transparent";
+          }, 1000); // Clear after 1 second
+          
         } else {
           resultDiv.innerText = "Error: " + data.message;
           resultDiv.style.color = "red";
@@ -28,7 +42,6 @@ function onScanSuccess(decodedText, decodedResult) {
       }
     })
     .catch(err => {
-      const resultDiv = document.getElementById('scan-result');
       resultDiv.innerText = "Server error. Try again.";
       resultDiv.style.color = "grey";
       resultDiv.style.background = "#fff8";
