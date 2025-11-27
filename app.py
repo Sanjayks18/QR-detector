@@ -197,8 +197,5 @@ def save_attendance_photo():
         return jsonify({"success": False, "message": "Error saving photo."})
 
 if __name__ == "__main__":
-    init_attendance_file()
-    print("🚀 Flask app starting...")
-    print("📱 Scanner: http://localhost:5000/")
-    print("🔐 Admin: http://localhost:5000/admin (Password: admin123)")
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
