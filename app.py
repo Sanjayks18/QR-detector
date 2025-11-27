@@ -1,20 +1,20 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 import pandas as pd
 import datetime
 import os
 import base64
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-2025-change-this-in-production'  # Required for sessions
 
 scanned_today = set()
+ADMIN_PASSWORD = "admin123"  # Change this password securely
 
 def get_today_attendance_file():
-    """Generate filename for today's attendance file"""
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     return f"attendance-{today_str}.csv"
 
 def init_attendance_file():
-    """Initialize today's attendance file and load scanned barcodes"""
     global scanned_today
     try:
         today_file = get_today_attendance_file()
@@ -32,7 +32,6 @@ def init_attendance_file():
             else:
                 scanned_today = set()
         else:
-            # Create today's attendance file if it doesn't exist
             df = pd.DataFrame(columns=['Student Name', 'Barcode', 'Date', 'Time'])
             df.to_csv(today_file, index=False)
             scanned_today = set()
@@ -56,6 +55,69 @@ def find_student(barcode):
 def home():
     return render_template("index.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == ADMIN_PASSWORD:
+            session["admin_logged_in"] = True
+            return redirect(url_for("admin_dashboard"))
+        else:
+            return render_template("login.html", error="❌ Wrong Password!")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("login"))
+
+@app.route("/admin")
+def admin_dashboard():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login"))
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    return redirect(url_for("admin_dashboard_day", date=today_str))
+
+@app.route("/admin/day")
+def admin_dashboard_day():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login"))
+
+    date_str = request.args.get('date')
+    if not date_str:
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    filename = f"attendance-{date_str}.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+    else:
+        df = pd.DataFrame(columns=['Student Name', 'Barcode', 'Date', 'Time'])
+
+    attendance_records = df.to_dict(orient='records')
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    return render_template("admin.html", records=attendance_records, selected_date=date_str, current_date=current_date)
+
+@app.route("/download")
+def download_csv():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login"))
+    date_str = request.args.get('date', datetime.datetime.now().strftime("%Y-%m-%d"))
+    filename = f"attendance-{date_str}.csv"
+    if os.path.exists(filename):
+        return send_file(filename, as_attachment=True)
+    return "File not found.", 404
+
+@app.route("/reset", methods=["POST"])
+def reset_attendance():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login"))
+    global scanned_today
+    today_file = get_today_attendance_file()
+    if os.path.exists(today_file):
+        os.remove(today_file)
+        scanned_today.clear()
+    return redirect(url_for("admin_dashboard"))
+
 @app.route("/scan", methods=["POST"])
 def scan():
     global scanned_today
@@ -74,7 +136,6 @@ def scan():
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H:%M:%S")
 
-    # Check if already scanned today using today's specific file
     if searched_barcode in scanned_today:
         return jsonify({"success": False, "message": f"{student_name} already marked today!"})
 
@@ -86,7 +147,6 @@ def scan():
     }
     
     try:
-        # Always work with today's specific attendance file
         if os.path.exists(today_file):
             df = pd.read_csv(today_file)
             new_row_df = pd.DataFrame([new_record])
@@ -103,7 +163,7 @@ def scan():
         return jsonify({"success": False, "message": "Error saving attendance."})
 
     return jsonify({
-        "success": True, 
+        "success": True,
         "message": f"Attendance marked for {student_name} ({searched_barcode})",
         "studentName": student_name,
         "barcode": searched_barcode
@@ -138,4 +198,7 @@ def save_attendance_photo():
 
 if __name__ == "__main__":
     init_attendance_file()
+    print("🚀 Flask app starting...")
+    print("📱 Scanner: http://localhost:5000/")
+    print("🔐 Admin: http://localhost:5000/admin (Password: admin123)")
     app.run(debug=True)

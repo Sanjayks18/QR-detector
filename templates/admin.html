@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Attendance</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #4CAF50; text-align: center; }
+        input[type="text"] { width: 100%; max-width: 400px; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
+        .date-form { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            border: 2px solid #e9ecef;
+        }
+        .date-form input[type="date"] {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+        .date-form button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .date-form button:hover { background: #45a049; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #4CAF50; color: white; font-weight: bold; }
+        tr:hover { background-color: #f1f1f1; }
+        .buttons { text-align: center; margin-top: 30px; }
+        button { padding: 12px 24px; margin: 0 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; }
+        .download { background: #2196F3; color: white; }
+        .reset { background: #f44336; color: white; }
+        .home { background: #4CAF50; color: white; }
+        .logout { background: #ff9800; color: white; }
+        .stats { background: #ff9800; color: white; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+        .current-date { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .no-records { text-align: center; color: #666; font-style: italic; padding: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Admin Dashboard - Attendance Records</h1>
+        
+        <!-- Date Selection Form -->
+        <form method="GET" action="/admin/day" class="date-form">
+            <div class="current-date">
+                Viewing: {{ selected_date or current_date }} 
+                {% if records|length > 0 %}
+                    ({{ records|length }} students)
+                {% endif %}
+            </div>
+            <label for="datePicker"><strong>Select Date: </strong></label>
+            <input type="date" id="datePicker" name="date" value="{{ selected_date or '' }}" required />
+            <button type="submit">🔍 View Attendance</button>
+        </form>
+
+        <!-- Search -->
+        <input type="text" id="search" placeholder="🔍 Search by name or USN..." onkeyup="filterTable()">
+
+        <!-- Attendance Table -->
+        <table id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>USN</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if records %}
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record['Student Name'] }}</td>
+                        <td>{{ record['Barcode'] }}</td>
+                        <td>{{ record['Date'] }}</td>
+                        <td>{{ record['Time'] }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="no-records">
+                        <td colspan="4">No attendance records found for {{ selected_date or current_date }}</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="buttons">
+            <a href="/download?date={{ selected_date or '' }}"><button class="download">📥 Download CSV</button></a>
+            {% if selected_date == current_date %}
+            <form method="POST" action="/reset" style="display:inline;" onsubmit="return confirm('Reset today\'s attendance?');">
+                <button type="submit" class="reset">🔄 Reset Today</button>
+            </form>
+            {% endif %}
+            <a href="/logout"><button class="logout">🚪 Logout</button></a>
+            <a href="/"><button class="home">🏠 Scanner</button></a>
+        </div>
+    </div>
+
+    <script>
+        // Set max date to today
+        document.addEventListener("DOMContentLoaded", function() {
+            let dateInput = document.getElementById("datePicker");
+            if (dateInput) {
+                let today = new Date().toISOString().split('T')[0];
+                dateInput.max = today;
+                if (!dateInput.value) {
+                    dateInput.value = today;
+                }
+            }
+        });
+
+        function filterTable() {
+            let input = document.getElementById("search");
+            let filter = input.value.toLowerCase();
+            let table = document.getElementById("attendanceTable");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let tdName = tr[i].getElementsByTagName("td")[0];
+                let tdUSN = tr[i].getElementsByTagName("td")[1];
+                if (tdName && tdUSN) {
+                    let txtValueName = tdName.textContent || tdName.innerText;
+                    let txtValueUSN = tdUSN.textContent || tdUSN.innerText;
+                    if (txtValueName.toLowerCase().indexOf(filter) > -1 || txtValueUSN.toLowerCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
