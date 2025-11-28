@@ -1,130 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>QR Attendance Scanner</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      max-width: 500px;
-      width: 100%;
-      text-align: center;
-    }
-    h1 {
-      color: #4CAF50;
-      margin-bottom: 10px;
-      font-size: 28px;
-    }
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 16px;
-    }
-    #scan-result {
-      margin: 20px 0;
-      min-height: 50px;
-      padding: 15px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      border: 2px solid transparent;
-    }
-    #reader {
-      width: 320px;
-      height: 240px;
-      margin: 0 auto 20px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    #photo-canvas-container {
-      margin-top: 20px;
-      text-align: center;
-    }
-    #photo-canvas-container canvas {
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      max-width: 100%;
-    }
-    .nav-buttons {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .admin-btn, .refresh-btn {
-      padding: 12px 24px;
-      background: linear-gradient(45deg, #4CAF50, #45a049);
-      color: white;
-      text-decoration: none;
-      border-radius: 25px;
-      font-weight: bold;
-      font-size: 14px;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-    }
-    .admin-btn:hover, .refresh-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
-    }
-    .status {
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    .success { background: #e8f5e8; color: #2e7d32; border: 2px solid #4caf50; }
-    .error { background: #ffebee; color: #c62828; border: 2px solid #f44336; }
-    .already { background: #e1f5fe; color: #0277bd; border: 2px solid #03a9f4; }
-    .scanning { background: #fff3e0; color: #ef6c00; border: 2px solid #ff9800; }
-  </style>
-  
-  <!-- QR Scanner Library -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QR Attendance Scanner</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    background: rgba(255,255,255,0.95);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+  }
+  h1 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+  #video {
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    border: 3px solid #667eea;
+    border-radius: 15px;
+    background: #000;
+  }
+  .status {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-height: 60px;
+  }
+  .success { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+  .error { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+  .photo-message {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #2c3e50;
+    border: 2px solid #74b9ff;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+  .countdown {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #e17055;
+    margin: 1rem 0;
+  }
+  button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin: 0.5rem;
+    transition: transform 0.3s;
+  }
+  button:hover {
+    transform: translateY(-2px);
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .admin-link {
+    margin-top: 2rem;
+    color: #667eea;
+    text-decoration: none;
+  }
+  .admin-link:hover {
+    text-decoration: underline;
+  }
+</style>
 </head>
 <body>
-  <!-- Admin Navigation Button -->
-  <a href="/admin" class="admin-btn" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-    📊 Admin Dashboard
-  </a>
+<div class="container">
+  <h1>🎯 QR Attendance Scanner</h1>
+  <video id="video" autoplay playsinline></video>
+  <div id="status" class="status">Loading camera...</div>
+  <div id="countdown" class="countdown" style="display: none;"></div>
+  <button id="startBtn">Start Scanner</button>
+  <a href="/login" class="admin-link">🔐 Admin Dashboard</a>
+</div>
 
-  <div class="container">
-    <h1>📱 QR Attendance Scanner</h1>
-    <p class="subtitle">Scan QR code to mark attendance</p>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+  const video = document.getElementById('video');
+  const status = document.getElementById('status');
+  const countdownEl = document.getElementById('countdown');
+  const startBtn = document.getElementById('startBtn');
+  let stream = null;
+  let scanning = false;
 
-    <!-- QR Scanner -->
-    <div id="reader"></div>
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      status.textContent = 'Point QR code at camera...';
+      status.className = 'status';
+      startBtn.style.display = 'none';
+      scanning = true;
+      requestAnimationFrame(scanQR);
+      console.log('Camera started');
+    } catch (err) {
+      console.error('Camera error:', err);
+      status.textContent = '❌ Camera access denied or not available.';
+      status.className = 'status error';
+    }
+  }
 
-    <!-- Scan Result Display -->
-    <div id="scan-result" class="status"></div>
+  function scanQR() {
+    if (!scanning) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(scanQR);
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, canvas.width, canvas.height);
+    if (code) {
+      scanning = false;
+      console.log('QR code found:', code.data);
+      handleScan(code.data);
+    } else {
+      requestAnimationFrame(scanQR);
+    }
+  }
 
-    <!-- Photo Capture Container -->
-    <div id="photo-canvas-container"></div>
+  async function handleScan(barcode) {
+    status.textContent = 'Verifying attendance...';
+    status.className = 'status';
 
-    <!-- Navigation Buttons -->
-    <div class="nav-buttons">
-      <a href="/admin" class="admin-btn">📊 View Admin Dashboard</a>
-      <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Scanner</button>
-    </div>
-  </div>
+    try {
+      const response = await fetch('/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        status.innerHTML = `✅ ${data.message}`;
+        status.className = 'status success';
+        setTimeout(() => {
+          startPhotoCapture(data.barcode, data.studentName);
+        }, 1500);
+      } else {
+        status.innerHTML = `❌ ${data.message}`;
+        status.className = 'status error';
+        setTimeout(() => {
+          scanning = true;
+          requestAnimationFrame(scanQR);
+        }, 2500);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      status.textContent = '❌ Network error! Try again.';
+      status.className = 'status error';
+      setTimeout(() => {
+        scanning = true;
+        requestAnimationFrame(scanQR);
+      }, 2500);
+    }
+  }
 
-  <!-- Your existing app.js -->
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  function startPhotoCapture(barcode, studentName) {
+    status.innerHTML = '📸 Please stand back to capture your photo<br>in 3 seconds...';
+    status.className = 'status photo-message';
+
+    let count = 3;
+    countdownEl.textContent = count;
+    countdownEl.style.display = 'block';
+
+    const interval = setInterval(() => {
+      count--;
+      if (count === 0) {
+        clearInterval(interval);
+        countdownEl.style.display = 'none';
+        captureAndSavePhoto(barcode, studentName);
+      } else {
+        countdownEl.textContent = count;
+      }
+    }, 1000);
+  }
+
+  async function captureAndSavePhoto(barcode, studentName) {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const photoDataUrl = canvas.toDataURL('image/png');
+
+    status.textContent = 'Saving photo...';
+
+    try {
+      const response = await fetch('/save_attendance_photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode, studentName, photoData: photoDataUrl }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        status.innerHTML = `🎉 Attendance & Photo saved for ${studentName}!`;
+        status.className = 'status success';
+      } else {
+        status.innerHTML = `✅ Attendance saved for ${studentName}<br>❌ Photo failed to save.`;
+        status.className = 'status';
+      }
+    } catch (error) {
+      console.error('Photo save error:', error);
+      status.innerHTML = `✅ Attendance saved for ${studentName}<br>❌ Photo save network error.`;
+      status.className = 'status';
+    }
+
+    setTimeout(() => {
+      status.textContent = 'Ready for next scan...';
+      scanning = true;
+      requestAnimationFrame(scanQR);
+    }, 4000);
+  }
+
+  startBtn.addEventListener('click', startCamera);
+</script>
 </body>
 </html>

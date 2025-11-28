@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Students Database</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .back-btn { background: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+        .students-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        tr:hover { background: #f8f9fa; }
+        .qr-btn { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+            color: white; border: none; padding: 8px 15px; border-radius: 20px; 
+            cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block;
+        }
+        .qr-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(40,167,69,0.4); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Students Database - QR Codes</h1>
+        <a href="/admin" class="back-btn">← Back to Dashboard</a>
+        
+        {% set students = students_df %}
+        <table class="students-table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Barcode</th>
+                    <th>Generate QR Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in students.iterrows() %}
+                <tr>
+                    <td>{{ row['Student Name'] }}</td>
+                    <td>{{ row['Barcode'] }}</td>
+                    <td>
+                        <a href="/generate_qr/{{ row['Barcode'] }}" class="qr-btn" download>
+                            🖼️ Download QR Code
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
